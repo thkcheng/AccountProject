@@ -1,0 +1,53 @@
+
+{
+    "groupList":[
+        {
+            "accountList":[
+                {
+                    "account":"18410177727",
+                    "itemList":[
+                        {
+                            "key":"密码",
+                            "val":"thkcheng."
+                        }
+                    ],
+                    "name":"哔哩哔哩",
+                    "top":0
+                },
+                {
+                    "account":"18410177727",
+                    "itemList":[
+                        {
+                            "key":"密码",
+                            "val":"123456"
+                        },
+                        {
+                            "key":"邮箱",
+                            "val":"11111@qq.com"
+                        },
+                        {
+                            "key":"链接",
+                            "val":"http://www.baidu.com"
+                        }
+                    ],
+                    "name":"幕布",
+                    "top":0
+                }
+            ],
+            "name":"默认"
+        },
+        {
+            "accountList":[
+
+            ],
+            "name":"工作"
+        },
+        {
+            "accountList":[
+
+            ],
+            "name":"游戏"
+        }
+    ],
+    "version":1
+}

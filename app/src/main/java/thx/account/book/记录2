@@ -1,0 +1,154 @@
+package thx.account.book;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+
+import com.chad.library.adapter.base.BaseQuickAdapter;
+import com.chad.library.adapter.base.listener.OnItemChildClickListener;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import thx.account.book.adapter.AccountListAdapter;
+import thx.account.book.adapter.GroupListAdapter;
+import thx.account.book.databinding.ActivityMainBinding;
+import thx.account.book.event.AddAccountEvent;
+import thx.account.book.model.AccountBean;
+import thx.account.book.model.DataBean;
+import thx.account.book.model.GroupBean;
+import thx.account.book.util.DataUtil;
+import thx.account.book.util.GsonUtil;
+import thx.account.book.util.ToastUtil;
+
+/**
+ * @author thkcheng
+ */
+public class MainActivity extends AppCompatActivity {
+
+    private ActivityMainBinding mBinding;
+
+    /**
+     * 所有数据
+     */
+    private DataBean dataBean = null;
+
+    /**
+     * 分组列表
+     */
+    private List<GroupBean> groups = new ArrayList<>();
+    /**
+     * 每组的账号列表
+     */
+    private List<AccountBean> accounts = new ArrayList<>();
+
+    private GroupListAdapter groupAdapter;
+    private AccountListAdapter currentShowAdapter;
+
+    private Map<Integer, List<AccountBean>> accountMap = new HashMap<>();
+    private Map<Integer, AccountListAdapter> adapterMap = new HashMap<>();
+
+    private int groupIndex = 0;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        mBinding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(mBinding.getRoot());
+        setSupportActionBar(mBinding.toolbar);
+
+        dataBean = DataUtil.initData();
+        groups.addAll(dataBean.groupList);
+
+        initRecyclerView();
+    }
+
+    private void initRecyclerView() {
+        mBinding.rvGroups.setLayoutManager(new LinearLayoutManager(this));
+        groupAdapter = new GroupListAdapter(R.layout.item_group_list_layout, groups);
+        mBinding.rvGroups.setAdapter(groupAdapter);
+
+        mBinding.rvContents.setLayoutManager(new LinearLayoutManager(this));
+        for (int i = 0; i < groups.size(); i++) {
+            accountMap.put(i, groups.get(i).accountList);
+
+            AccountListAdapter accountAdapter = new AccountListAdapter(R.layout.item_content_list_layout);
+            adapterMap.put(i, accountAdapter);
+            if (i == 0) {
+                currentShowAdapter = accountAdapter;
+                mBinding.rvContents.setAdapter(currentShowAdapter);
+            }
+        }
+        groupAdapter.setOnItemClickListener((adapter, view, position) -> {
+            groupAdapter.setGroupIndex(groupIndex = position);
+
+            currentShowAdapter = adapterMap.get(position);
+            mBinding.rvContents.setAdapter(currentShowAdapter);
+            List<AccountBean> accountBeans = accountMap.get(position);
+            if (accountBeans != null) {
+                currentShowAdapter.addData(accountBeans);
+            }
+        });
+
+        currentShowAdapter.setOnItemChildClickListener((adapter, view, position) -> {
+            List<AccountBean> accountBeans = accountMap.get(groupIndex);
+            AccountBean accountBean = accountBeans.get(position);
+            ToastUtil.showToast(accountBean.name);
+        });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_toolbar_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        //创建菜单项的点击事件
+        switch (item.getItemId()) {
+            case R.id.toolbar_add:
+                startActivity(new Intent(this, AddAccountActivity.class));
+                ToastUtil.showToast("添加");
+                break;
+            case R.id.toolbar_setting:
+                ToastUtil.showToast("设置");
+                break;
+            default:
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Subscribe
+    public void addAccountEvent(AddAccountEvent event) {
+        currentShowAdapter = adapterMap.get(groupIndex);
+        currentShowAdapter.addData(event.accountBean);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().register(this);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        EventBus.getDefault().unregister(this);
+    }
+}
